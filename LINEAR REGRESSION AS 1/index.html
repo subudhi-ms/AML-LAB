@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Linear Regression</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Linear Regression Calculator</h1>
+
+    <h3>Enter Data</h3>
+
+    <input type="number" id="x" placeholder="Enter X">
+    <input type="number" id="y" placeholder="Enter Y">
+
+    <button onclick="addData()">Add</button>
+
+    <table border="1">
+
+        <tr>
+            <th>X</th>
+            <th>Y</th>
+        </tr>
+
+        <tbody id="tableData"></tbody>
+
+    </table>
+
+    <br>
+
+    <button onclick="calculate()">Calculate</button>
+
+    <hr>
+
+    <h2>Result</h2>
+
+    <p><b>Equation:</b> <span id="equation"></span></p>
+
+    <p><b>Slope:</b> <span id="slope"></span></p>
+
+    <p><b>Intercept:</b> <span id="intercept"></span></p>
+
+    <p><b>Mean X:</b> <span id="meanx"></span></p>
+
+    <p><b>Mean Y:</b> <span id="meany"></span></p>
+
+    <p><b>MAE:</b> <span id="mae"></span></p>
+
+    <p><b>MSE:</b> <span id="mse"></span></p>
+
+    <p><b>RMSE:</b> <span id="rmse"></span></p>
+
+    <p><b>R²:</b> <span id="r2"></span></p>
+
+    <img id="graph" width="600">
+
+    <hr>
+
+    <h2>Prediction</h2>
+
+    <input type="number" id="predictX" placeholder="Enter X">
+
+    <button onclick="predict()">Predict</button>
+
+    <h3 id="answer"></h3>
+
+</div>
+
+<script>
+
+let x = [];
+let y = [];
+let slope = 0;
+let intercept = 0;
+
+function addData(){
+
+    let xv = Number(document.getElementById("x").value);
+    let yv = Number(document.getElementById("y").value);
+
+    if(isNaN(xv) || isNaN(yv)){
+        alert("Enter valid numbers");
+        return;
+    }
+
+    x.push(xv);
+    y.push(yv);
+
+    let row =
+    "<tr><td>"+xv+"</td><td>"+yv+"</td></tr>";
+
+    document.getElementById("tableData").innerHTML += row;
+
+    document.getElementById("x").value="";
+    document.getElementById("y").value="";
+}
+
+async function calculate(){
+
+    let response = await fetch("/calculate",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+            x:x,
+            y:y
+        })
+
+    });
+
+    let data = await response.json();
+
+    slope = data.slope;
+    intercept = data.intercept;
+
+    document.getElementById("equation").innerHTML=data.equation;
+    document.getElementById("slope").innerHTML=data.slope;
+    document.getElementById("intercept").innerHTML=data.intercept;
+    document.getElementById("meanx").innerHTML=data.mean_x;
+    document.getElementById("meany").innerHTML=data.mean_y;
+    document.getElementById("mae").innerHTML=data.mae;
+    document.getElementById("mse").innerHTML=data.mse;
+    document.getElementById("rmse").innerHTML=data.rmse;
+    document.getElementById("r2").innerHTML=data.r2;
+
+    document.getElementById("graph").src =
+    "data:image/png;base64," + data.plot_url;
+
+}
+
+async function predict(){
+
+    let value = Number(document.getElementById("predictX").value);
+
+    let response = await fetch("/predict",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+
+            x:value,
+            m:slope,
+            c:intercept
+
+        })
+
+    });
+
+    let data = await response.json();
+
+    document.getElementById("answer").innerHTML =
+    "Predicted Y = " + data.prediction;
+
+}
+
+</script>
+
+</body>
+</html>
